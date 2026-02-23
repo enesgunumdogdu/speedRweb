@@ -16,6 +16,7 @@ export interface AnalysisResponse {
   videoId: string;
   sportType: string;
   status: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED";
+  progressPercent: number;
   speedKmh: number | null;
   speedMph: number | null;
   confidence: number | null;

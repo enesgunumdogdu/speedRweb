@@ -41,6 +41,9 @@ public class AnalysisRequest {
 
     private String errorMessage;
 
+    @Column(nullable = false)
+    private Integer progressPercent = 0;
+
     @Column(columnDefinition = "TEXT")
     private String frameDataJson;
 

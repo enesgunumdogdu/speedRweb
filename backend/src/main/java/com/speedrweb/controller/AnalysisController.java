@@ -3,6 +3,7 @@ package com.speedrweb.controller;
 import com.speedrweb.dto.AnalysisCallbackPayload;
 import com.speedrweb.dto.AnalysisCreateRequest;
 import com.speedrweb.dto.AnalysisListItem;
+import com.speedrweb.dto.AnalysisProgressPayload;
 import com.speedrweb.dto.AnalysisResponse;
 import com.speedrweb.dto.PagedResponse;
 import com.speedrweb.service.AnalysisService;
@@ -40,6 +41,13 @@ public class AnalysisController {
     public ResponseEntity<AnalysisResponse> getAnalysis(@PathVariable UUID analysisId) {
         AnalysisResponse response = analysisService.getAnalysis(analysisId);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{analysisId}/progress")
+    public ResponseEntity<Void> updateProgress(@PathVariable UUID analysisId,
+                                                @RequestBody AnalysisProgressPayload payload) {
+        analysisService.updateProgress(analysisId, payload.progressPercent());
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{analysisId}/callback")

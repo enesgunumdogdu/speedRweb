@@ -72,6 +72,7 @@ public class AnalysisService {
 
         if (payload.success()) {
             analysis.setStatus(AnalysisStatus.COMPLETED);
+            analysis.setProgressPercent(100);
             analysis.setSpeedKmh(payload.speedKmh());
             analysis.setSpeedMph(payload.speedMph());
             analysis.setConfidence(payload.confidence());
@@ -92,6 +93,21 @@ public class AnalysisService {
         analysis = analysisRequestRepository.save(analysis);
 
         return toResponse(analysis);
+    }
+
+    public void updateProgress(UUID analysisId, int progressPercent) {
+        AnalysisRequest analysis = analysisRequestRepository.findById(analysisId)
+                .orElseThrow(() -> new IllegalArgumentException("Analysis not found: " + analysisId));
+
+        int clamped = Math.max(0, Math.min(100, progressPercent));
+        analysis.setProgressPercent(clamped);
+
+        if (analysis.getStatus() == AnalysisStatus.PENDING) {
+            analysis.setStatus(AnalysisStatus.PROCESSING);
+            analysis.setStartedAt(Instant.now());
+        }
+
+        analysisRequestRepository.save(analysis);
     }
 
     public PagedResponse<AnalysisListItem> getAnalysisHistory(int page, int size) {
@@ -137,6 +153,7 @@ public class AnalysisService {
                 a.getVideo().getId(),
                 a.getSportType(),
                 a.getStatus(),
+                a.getProgressPercent(),
                 a.getSpeedKmh(),
                 a.getSpeedMph(),
                 a.getConfidence(),

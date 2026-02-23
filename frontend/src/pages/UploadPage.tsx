@@ -1,17 +1,42 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { uploadVideo, createAnalysis } from "../api/videoApi";
+import { uploadVideo, createAnalysis, getAnalysis } from "../api/videoApi";
 
 function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [referenceLengthCm, setReferenceLengthCm] = useState<string>("");
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [analysisProgress, setAnalysisProgress] = useState(0);
   const [uploadPhase, setUploadPhase] = useState<"uploading" | "analyzing" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+
+  const pollAnalysisProgress = useCallback(
+    (analysisId: string): Promise<void> => {
+      return new Promise((resolve, reject) => {
+        const poll = async () => {
+          try {
+            const data = await getAnalysis(analysisId);
+            setAnalysisProgress(data.progressPercent ?? 0);
+
+            if (data.status === "COMPLETED" || data.status === "FAILED") {
+              resolve();
+              navigate(`/result/${analysisId}`);
+            } else {
+              setTimeout(poll, 1500);
+            }
+          } catch (err) {
+            reject(err);
+          }
+        };
+        poll();
+      });
+    },
+    [navigate]
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,6 +45,7 @@ function UploadPage() {
     setUploading(true);
     setError(null);
     setUploadProgress(0);
+    setAnalysisProgress(0);
     setUploadPhase("uploading");
 
     try {
@@ -27,11 +53,13 @@ function UploadPage() {
         setUploadProgress(percent);
       });
       setUploadPhase("analyzing");
+      setAnalysisProgress(0);
       const refLength = referenceLengthCm
         ? parseFloat(referenceLengthCm)
         : undefined;
-      const analysisRes = await createAnalysis(uploadRes.videoId, refLength);
-      navigate(`/result/${analysisRes.analysisId}`);
+      await createAnalysis(uploadRes.videoId, refLength).then((res) =>
+        pollAnalysisProgress(res.analysisId)
+      );
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Upload failed. Please try again.";
@@ -40,6 +68,7 @@ function UploadPage() {
       setUploading(false);
       setUploadPhase(null);
       setUploadProgress(0);
+      setAnalysisProgress(0);
     }
   };
 
@@ -56,6 +85,11 @@ function UploadPage() {
       setFile(dropped);
     }
   };
+
+  const analysisLabel =
+    analysisProgress > 0
+      ? `Analyzing... ${analysisProgress}%`
+      : "Starting analysis...";
 
   return (
     <div className="page" style={{ maxWidth: 560 }}>
@@ -136,10 +170,20 @@ function UploadPage() {
         {uploading && uploadPhase === "analyzing" && (
           <div className="upload-progress mb-2">
             <div className="upload-progress-header">
-              <span className="upload-progress-label">Starting analysis...</span>
+              <span className="upload-progress-label">{analysisLabel}</span>
+              {analysisProgress > 0 && (
+                <span className="upload-progress-percent">{analysisProgress}%</span>
+              )}
             </div>
             <div className="upload-progress-track">
-              <div className="upload-progress-bar indeterminate" />
+              {analysisProgress > 0 ? (
+                <div
+                  className="upload-progress-bar"
+                  style={{ width: `${analysisProgress}%` }}
+                />
+              ) : (
+                <div className="upload-progress-bar indeterminate" />
+              )}
             </div>
           </div>
         )}
@@ -153,7 +197,7 @@ function UploadPage() {
           {uploading
             ? uploadPhase === "uploading"
               ? `Uploading... ${uploadProgress}%`
-              : "Starting analysis..."
+              : analysisLabel
             : "Upload & Analyze"}
         </button>
       </form>

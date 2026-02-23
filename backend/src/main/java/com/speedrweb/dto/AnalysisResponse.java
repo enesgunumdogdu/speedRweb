@@ -12,6 +12,7 @@ public record AnalysisResponse(
         UUID videoId,
         SportType sportType,
         AnalysisStatus status,
+        Integer progressPercent,
         Double speedKmh,
         Double speedMph,
         Double confidence,
