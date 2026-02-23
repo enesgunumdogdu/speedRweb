@@ -20,12 +20,19 @@ PLAYER_FRAME_RATIO_MAX = 0.95      # Player can't fill entire frame
 class IceHockeyAnalyzer:
     """Analyzes ice hockey videos to measure stick swing speed using optical flow."""
 
-    def analyze(self, video_path: str, reference_length_cm: float | None = None):
+    def analyze(self, video_path: str, reference_length_cm: float | None = None,
+                on_progress: callable = None):
         """
         Main entry point.
         Returns (speed_kmh, speed_mph, confidence, frame_speeds_kmh, fps).
         Raises ValueError for invalid/unusable videos.
+        on_progress(percent: int) is called at key stages.
         """
+        def report(pct: int):
+            if on_progress:
+                on_progress(pct)
+
+        report(5)
         frames, fps = self._load_video(video_path)
 
         if len(frames) < 5:
@@ -34,15 +41,19 @@ class IceHockeyAnalyzer:
                 "At least 5 frames are required for analysis."
             )
 
-        flow_magnitudes = self._compute_optical_flows(frames)
+        report(15)
+        flow_magnitudes = self._compute_optical_flows(frames, on_progress)
+        report(75)
         peak_magnitude, peak_idx = self._find_peak_speed(flow_magnitudes)
 
         # ── Auto-calibration pipeline ──
+        report(80)
         cm_per_pixel, cal_method = self._auto_calibrate(
             frames, flow_magnitudes, peak_idx, reference_length_cm
         )
 
         # ── Speed calculations ──
+        report(90)
         speed_cm_per_sec = peak_magnitude * fps * cm_per_pixel
         speed_kmh = round(speed_cm_per_sec * 0.036, 1)
         speed_mph = round(speed_kmh * 0.621371, 1)
@@ -57,6 +68,7 @@ class IceHockeyAnalyzer:
             reference_length_cm is not None, fps, len(frames), frames[0].shape[0]
         )
 
+        report(95)
         return speed_kmh, speed_mph, confidence, frame_speeds_kmh, fps
 
     # ═══════════════════════════════════════════════════════════════
@@ -97,10 +109,11 @@ class IceHockeyAnalyzer:
 
         return frames, fps
 
-    def _compute_optical_flows(self, frames):
+    def _compute_optical_flows(self, frames, on_progress=None):
         """Compute per-frame-pair peak magnitude (99th percentile) using Farneback."""
         magnitudes = []
-        for i in range(len(frames) - 1):
+        total = len(frames) - 1
+        for i in range(total):
             flow = cv2.calcOpticalFlowFarneback(
                 frames[i], frames[i + 1],
                 None, 0.5, 3, 15, 3, 5, 1.2, 0
@@ -108,6 +121,11 @@ class IceHockeyAnalyzer:
             mag, _ = cv2.cartToPolar(flow[..., 0], flow[..., 1])
             peak_mag = float(np.percentile(mag, 99))
             magnitudes.append(peak_mag)
+
+            # Report progress: optical flow spans 15% → 75% range
+            if on_progress and total > 0:
+                pct = 15 + int((i + 1) / total * 60)
+                on_progress(pct)
         return magnitudes
 
     def _find_peak_speed(self, flow_magnitudes):

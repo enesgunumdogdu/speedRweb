@@ -12,11 +12,24 @@ app = Flask(__name__)
 analyzer = IceHockeyAnalyzer()
 
 
-def run_analysis(video_path: str, reference_length_cm: float | None, callback_url: str):
+def send_progress(progress_url: str, percent: int):
+    """Send a progress update to the Spring Boot backend."""
+    try:
+        requests.post(progress_url, json={"progressPercent": percent}, timeout=5)
+    except Exception:
+        pass  # Non-critical: don't fail analysis if progress update fails
+
+
+def run_analysis(video_path: str, reference_length_cm: float | None,
+                 callback_url: str, progress_url: str | None):
     """Run the actual OpenCV analysis and post results to callback URL."""
+    def on_progress(percent: int):
+        if progress_url:
+            send_progress(progress_url, percent)
+
     try:
         speed_kmh, speed_mph, confidence, frame_speeds_kmh, fps = analyzer.analyze(
-            video_path, reference_length_cm
+            video_path, reference_length_cm, on_progress=on_progress
         )
         payload = {
             "success": True,
@@ -54,6 +67,7 @@ def analyze_ice_hockey():
     analysis_id = data.get("analysis_id")
     video_path = data.get("video_path")
     callback_url = data.get("callback_url")
+    progress_url = data.get("progress_url")
     reference_length_cm = data.get("reference_length_cm")
 
     if not analysis_id or not callback_url:
@@ -66,7 +80,7 @@ def analyze_ice_hockey():
 
     thread = threading.Thread(
         target=run_analysis,
-        args=(video_path, reference_length_cm, callback_url),
+        args=(video_path, reference_length_cm, callback_url, progress_url),
     )
     thread.start()
 

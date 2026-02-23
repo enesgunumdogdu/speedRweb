@@ -7,6 +7,7 @@ Video-based speed measurement tool for sports. Upload a video, get speed analysi
 | Layer | Technology | Version |
 |-------|-----------|---------|
 | Backend | Java (Spring Boot) | 21 (3.4.3) |
+| Auth | Spring Security + JWT (jjwt) | 0.12.6 |
 | Frontend | React (TypeScript, Vite) | 19.2.0 (7.3.1) |
 | Analysis | Python (Flask, OpenCV) | 3.1.0 (4.11.0) |
 | Database | PostgreSQL | - |
@@ -18,7 +19,7 @@ Video-based speed measurement tool for sports. Upload a video, get speed analysi
 ```
 frontend/           React SPA (Vite dev server :5173)
     |
-    | REST API
+    | REST API (JWT auth)
     v
 backend/            Spring Boot API (:8080)
     |
@@ -27,7 +28,7 @@ backend/            Spring Boot API (:8080)
 analysis-service/   Flask + OpenCV (:5001)
 ```
 
-**Flow**: Upload video -> Create analysis request -> Backend delegates to Python service -> OpenCV processes video -> Callback with results -> Frontend polls and displays.
+**Flow**: Register/Login -> Upload video -> Create analysis request -> Backend delegates to Python service -> OpenCV processes video -> Callback with results -> Frontend polls and displays.
 
 ```
 speedrweb/
@@ -35,15 +36,17 @@ speedrweb/
 │   └── src/main/java/com/speedrweb/
 │       ├── controller/     REST endpoints
 │       ├── service/        Business logic + analyzer modules
-│       ├── model/          JPA entities
+│       ├── model/          JPA entities (User, Video, AnalysisRequest)
 │       ├── repository/     Data access
 │       ├── dto/            Request/response objects
-│       └── config/         CORS, async, RestTemplate
+│       ├── security/       JWT filter, UserDetails, utilities
+│       └── config/         CORS, async, security, RestTemplate
 ├── frontend/               React + TypeScript + Vite
 │   └── src/
-│       ├── pages/          Home, Upload, Result, History
-│       ├── components/     SpeedOverlay
-│       └── api/            Axios client + video API
+│       ├── pages/          Home, Upload, Result, History, Login, Register
+│       ├── components/     SpeedOverlay, ProtectedRoute
+│       ├── context/        AuthContext (JWT token management)
+│       └── api/            Axios client, video API, auth API
 └── analysis-service/       Python Flask service
     ├── app.py              Flask routes
     └── analyzer.py         OpenCV ice hockey analyzer
@@ -97,7 +100,14 @@ Runs on http://localhost:5001
 
 ## API Endpoints
 
-### Videos
+### Auth (public)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/auth/register` | Register new user |
+| POST | `/api/auth/login` | Login, returns JWT token |
+
+### Videos (authenticated)
 
 | Method | Path | Description |
 |--------|------|-------------|
@@ -105,14 +115,21 @@ Runs on http://localhost:5001
 | GET | `/api/videos/{id}` | Get video metadata |
 | GET | `/api/videos/{id}/stream` | Stream video (supports range requests) |
 
-### Analysis
+### Analysis (authenticated)
 
 | Method | Path | Description |
 |--------|------|-------------|
 | POST | `/api/analysis` | Create analysis request |
 | GET | `/api/analysis/{id}` | Get analysis result |
 | GET | `/api/analysis?page=0&size=10` | List analysis history (paginated) |
-| POST | `/api/analysis/{id}/callback` | Receive results from analysis service |
+| POST | `/api/analysis/{id}/callback` | Receive results from analysis service (public) |
+| POST | `/api/analysis/{id}/progress` | Receive progress updates (public) |
+
+### Health (public)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/health` | Health check |
 
 ### Analysis Service (internal)
 
@@ -126,7 +143,10 @@ Runs on http://localhost:5001
 MVP phase: Ice hockey stick speed measurement.
 
 - Video upload and streaming
-- Async analysis pipeline with callback pattern
-- OpenCV-based speed detection
+- JWT-based authentication (register/login)
+- Protected routes and per-user data
+- Async analysis pipeline with progress tracking and callback pattern
+- Multi-method auto-calibration (optical flow, edge detection, player height estimation)
+- OpenCV-based stick speed detection with confidence scoring
 - Real-time speed overlay on video playback
 - Analysis history with pagination

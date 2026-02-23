@@ -26,13 +26,13 @@ function UploadPage() {
               resolve();
               navigate(`/result/${analysisId}`);
             } else {
-              setTimeout(poll, 1500);
+              setTimeout(poll, 1000);
             }
           } catch (err) {
             reject(err);
           }
         };
-        poll();
+        setTimeout(poll, 500);
       });
     },
     [navigate]

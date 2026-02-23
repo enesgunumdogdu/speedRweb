@@ -44,13 +44,16 @@ public class IceHockeyAnalyzer implements SportAnalyzer {
         analysisRequestRepository.save(request);
 
         try {
-            String callbackUrl = "http://localhost:8080/api/analysis/" + request.getId() + "/callback";
+            String baseUrl = "http://localhost:8080/api/analysis/" + request.getId();
+            String callbackUrl = baseUrl + "/callback";
+            String progressUrl = baseUrl + "/progress";
 
             Map<String, Object> payload = Map.of(
                     "analysis_id", request.getId().toString(),
                     "video_path", request.getVideo().getStoragePath(),
                     "reference_length_cm", request.getReferenceLengthCm() != null ? request.getReferenceLengthCm() : 0,
-                    "callback_url", callbackUrl
+                    "callback_url", callbackUrl,
+                    "progress_url", progressUrl
             );
 
             restTemplate.postForEntity(
