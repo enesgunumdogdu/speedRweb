@@ -1,28 +1,38 @@
-import random
+from __future__ import annotations
+
 import threading
-import time
+import traceback
 
 import requests
 from flask import Flask, request, jsonify
 
+from analyzer import IceHockeyAnalyzer
+
 app = Flask(__name__)
+analyzer = IceHockeyAnalyzer()
 
 
-def mock_analyze(callback_url: str):
-    """Simulate analysis: wait 3 seconds, then post random speed result."""
-    time.sleep(3)
-
-    speed_kmh = round(random.uniform(80, 170), 1)
-    speed_mph = round(speed_kmh * 0.621371, 1)
-    confidence = round(random.uniform(0.75, 0.99), 2)
-
-    payload = {
-        "success": True,
-        "speedKmh": speed_kmh,
-        "speedMph": speed_mph,
-        "confidence": confidence,
-        "errorMessage": None,
-    }
+def run_analysis(video_path: str, reference_length_cm: float | None, callback_url: str):
+    """Run the actual OpenCV analysis and post results to callback URL."""
+    try:
+        speed_kmh, speed_mph, confidence = analyzer.analyze(video_path, reference_length_cm)
+        payload = {
+            "success": True,
+            "speedKmh": speed_kmh,
+            "speedMph": speed_mph,
+            "confidence": confidence,
+            "errorMessage": None,
+        }
+    except Exception as e:
+        print(f"Analysis failed: {e}")
+        traceback.print_exc()
+        payload = {
+            "success": False,
+            "speedKmh": None,
+            "speedMph": None,
+            "confidence": None,
+            "errorMessage": str(e),
+        }
 
     try:
         resp = requests.post(callback_url, json=payload, timeout=10)
@@ -35,14 +45,22 @@ def mock_analyze(callback_url: str):
 def analyze_ice_hockey():
     data = request.get_json()
     analysis_id = data.get("analysis_id")
+    video_path = data.get("video_path")
     callback_url = data.get("callback_url")
+    reference_length_cm = data.get("reference_length_cm")
 
     if not analysis_id or not callback_url:
         return jsonify({"error": "analysis_id and callback_url are required"}), 400
 
-    print(f"Received analysis request: {analysis_id}")
+    if not video_path:
+        return jsonify({"error": "video_path is required"}), 400
 
-    thread = threading.Thread(target=mock_analyze, args=(callback_url,))
+    print(f"Received analysis request: {analysis_id} — video: {video_path}")
+
+    thread = threading.Thread(
+        target=run_analysis,
+        args=(video_path, reference_length_cm, callback_url),
+    )
     thread.start()
 
     return jsonify({"status": "accepted", "analysis_id": analysis_id}), 202
