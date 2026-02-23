@@ -1,8 +1,8 @@
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/speedrweb_dev
-    username: postgres
-    password: postgres
+    username: enesgunumdogdu
+    password:
 
   jpa:
     hibernate:
