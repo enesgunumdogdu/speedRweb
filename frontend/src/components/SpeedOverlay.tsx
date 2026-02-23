@@ -11,19 +11,16 @@ function speedToColor(speed: number, peak: number): string {
   if (peak <= 0) return "#4caf50";
   const ratio = Math.min(speed / peak, 1);
   if (ratio < 0.5) {
-    // green -> yellow
     const t = ratio / 0.5;
     const r = Math.round(76 + (255 - 76) * t);
     const g = Math.round(175 + (235 - 175) * t);
     const b = Math.round(80 - 80 * t);
     return `rgb(${r},${g},${b})`;
   }
-  // yellow -> red
   const t = (ratio - 0.5) / 0.5;
-  const r = Math.round(255);
+  const r = 255;
   const g = Math.round(235 - 235 * t);
-  const b = Math.round(0);
-  return `rgb(${r},${g},${b})`;
+  return `rgb(${r},${g},0)`;
 }
 
 export default function SpeedOverlay({ videoUrl, frameData, peakSpeedKmh }: SpeedOverlayProps) {
@@ -44,7 +41,6 @@ export default function SpeedOverlay({ videoUrl, frameData, peakSpeedKmh }: Spee
     return Math.min(idx, totalFrames - 1);
   }, [fps, totalFrames]);
 
-  // Animation loop for smooth speed overlay updates
   useEffect(() => {
     const tick = () => {
       const idx = getFrameIndex();
@@ -56,7 +52,6 @@ export default function SpeedOverlay({ videoUrl, frameData, peakSpeedKmh }: Spee
     return () => cancelAnimationFrame(animFrameRef.current);
   }, [getFrameIndex, frameSpeeds]);
 
-  // Draw the speed-time graph
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -79,11 +74,11 @@ export default function SpeedOverlay({ videoUrl, frameData, peakSpeedKmh }: Spee
     const graphH = h - padTop - padBottom;
 
     // Background
-    ctx.fillStyle = "#1a1a2e";
+    ctx.fillStyle = "#12121a";
     ctx.fillRect(0, 0, w, h);
 
-    // Grid lines
-    ctx.strokeStyle = "#333";
+    // Grid
+    ctx.strokeStyle = "#252530";
     ctx.lineWidth = 0.5;
     const gridLines = 4;
     for (let i = 0; i <= gridLines; i++) {
@@ -94,23 +89,23 @@ export default function SpeedOverlay({ videoUrl, frameData, peakSpeedKmh }: Spee
       ctx.stroke();
 
       const val = ((gridLines - i) / gridLines * maxSpeed).toFixed(0);
-      ctx.fillStyle = "#888";
-      ctx.font = "11px monospace";
+      ctx.fillStyle = "#6b7280";
+      ctx.font = "11px system-ui, sans-serif";
       ctx.textAlign = "right";
       ctx.fillText(val, padLeft - 5, y + 4);
     }
 
     // Y-axis label
     ctx.save();
-    ctx.fillStyle = "#888";
-    ctx.font = "10px monospace";
+    ctx.fillStyle = "#6b7280";
+    ctx.font = "10px system-ui, sans-serif";
     ctx.translate(10, padTop + graphH / 2);
     ctx.rotate(-Math.PI / 2);
     ctx.textAlign = "center";
     ctx.fillText("km/h", 0, 0);
     ctx.restore();
 
-    // Speed line with gradient coloring
+    // Speed line
     if (totalFrames > 1) {
       for (let i = 0; i < totalFrames - 1; i++) {
         const x1 = padLeft + (i / (totalFrames - 1)) * graphW;
@@ -131,20 +126,20 @@ export default function SpeedOverlay({ videoUrl, frameData, peakSpeedKmh }: Spee
     if (peakFrameIdx >= 0 && totalFrames > 1) {
       const px = padLeft + (peakFrameIdx / (totalFrames - 1)) * graphW;
       const py = padTop + graphH - (frameSpeeds[peakFrameIdx] / maxSpeed) * graphH;
-      ctx.fillStyle = "#ff1744";
+      ctx.fillStyle = "#ef4444";
       ctx.beginPath();
       ctx.arc(px, py, 5, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = "#fff";
-      ctx.font = "bold 11px monospace";
+      ctx.font = "bold 11px system-ui, sans-serif";
       ctx.textAlign = "center";
       ctx.fillText(`${frameSpeeds[peakFrameIdx].toFixed(1)}`, px, py - 10);
     }
 
-    // Playback position line
+    // Playback position
     if (totalFrames > 1) {
       const posX = padLeft + (currentFrameIdx / (totalFrames - 1)) * graphW;
-      ctx.strokeStyle = "#ffffff";
+      ctx.strokeStyle = "rgba(255,255,255,0.6)";
       ctx.lineWidth = 1.5;
       ctx.setLineDash([4, 3]);
       ctx.beginPath();
@@ -157,8 +152,8 @@ export default function SpeedOverlay({ videoUrl, frameData, peakSpeedKmh }: Spee
     // Time axis
     const duration = totalFrames / fps;
     const timeSteps = Math.min(5, Math.floor(duration));
-    ctx.fillStyle = "#888";
-    ctx.font = "10px monospace";
+    ctx.fillStyle = "#6b7280";
+    ctx.font = "10px system-ui, sans-serif";
     ctx.textAlign = "center";
     for (let i = 0; i <= timeSteps; i++) {
       const t = (i / timeSteps) * duration;
@@ -185,42 +180,52 @@ export default function SpeedOverlay({ videoUrl, frameData, peakSpeedKmh }: Spee
   const color = speedToColor(currentSpeed, peakSpeedKmh);
 
   return (
-    <div style={{ width: "100%" }}>
-      {/* Video player with speed overlay */}
-      <div style={{ position: "relative", width: "100%", background: "#000", borderRadius: 8, overflow: "hidden" }}>
+    <div>
+      <div style={{
+        position: "relative",
+        background: "#000",
+        borderRadius: "var(--radius-lg)",
+        overflow: "hidden",
+        border: "1px solid var(--border)",
+      }}>
         <video
           ref={videoRef}
           src={videoUrl}
           controls
           style={{ width: "100%", maxHeight: "50vh", objectFit: "contain", display: "block" }}
         />
-        <div
-          style={{
-            position: "absolute",
-            top: 12,
-            right: 12,
-            background: "rgba(0,0,0,0.7)",
-            borderRadius: 8,
-            padding: "8px 16px",
-            pointerEvents: "none",
-          }}
-        >
-          <div style={{ fontSize: "2rem", fontWeight: 700, color, fontFamily: "monospace", lineHeight: 1.1 }}>
+        <div style={{
+          position: "absolute",
+          top: 10,
+          right: 10,
+          background: "rgba(0,0,0,0.75)",
+          backdropFilter: "blur(8px)",
+          borderRadius: 8,
+          padding: "6px 14px",
+          pointerEvents: "none",
+        }}>
+          <div style={{
+            fontSize: "1.75rem",
+            fontWeight: 700,
+            color,
+            fontVariantNumeric: "tabular-nums",
+            lineHeight: 1.1,
+          }}>
             {currentSpeed.toFixed(1)}
           </div>
-          <div style={{ fontSize: "0.75rem", color: "#ccc", textAlign: "center" }}>km/h</div>
+          <div style={{ fontSize: "0.6875rem", color: "#9ca3af", textAlign: "center" }}>km/h</div>
         </div>
       </div>
 
-      {/* Speed-time graph */}
-      <div style={{ marginTop: 12 }}>
+      <div style={{ marginTop: 10 }}>
         <canvas
           ref={canvasRef}
           onClick={handleCanvasClick}
           style={{
             width: "100%",
-            height: 160,
-            borderRadius: 8,
+            height: 140,
+            borderRadius: "var(--radius-lg)",
+            border: "1px solid var(--border)",
             cursor: "crosshair",
             display: "block",
           }}

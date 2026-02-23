@@ -7,6 +7,7 @@ function UploadPage() {
   const [referenceLengthCm, setReferenceLengthCm] = useState<string>("");
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
@@ -38,74 +39,83 @@ function UploadPage() {
     return (bytes / (1024 * 1024)).toFixed(1) + " MB";
   };
 
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(false);
+    const dropped = e.dataTransfer.files[0];
+    if (dropped && dropped.type.startsWith("video/")) {
+      setFile(dropped);
+    }
+  };
+
   return (
-    <div style={{ maxWidth: 600, margin: "0 auto", padding: "2rem" }}>
+    <div className="page" style={{ maxWidth: 560 }}>
       <h1>Upload Video</h1>
-      <p style={{ color: "#666" }}>
-        Upload an ice hockey video to measure stick speed.
+      <p className="mb-3">
+        Upload an ice hockey video to measure stick swing speed.
       </p>
 
       <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: "1.5rem" }}>
-          <label
-            htmlFor="video-file"
-            style={{ display: "block", marginBottom: "0.5rem", fontWeight: 600 }}
+        <div className="card mb-3">
+          {/* File drop zone */}
+          <div
+            className={`file-drop${dragActive ? " active" : ""}${file ? " active" : ""}`}
+            onClick={() => fileInputRef.current?.click()}
+            onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+            onDragLeave={() => setDragActive(false)}
+            onDrop={handleDrop}
           >
-            Video File
-          </label>
-          <input
-            id="video-file"
-            ref={fileInputRef}
-            type="file"
-            accept="video/mp4,video/quicktime,video/x-msvideo,video/webm"
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            style={{ display: "block" }}
-          />
-          {file && (
-            <p style={{ fontSize: "0.875rem", color: "#888", marginTop: "0.25rem" }}>
-              {file.name} ({formatFileSize(file.size)})
-            </p>
-          )}
-        </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="video/mp4,video/quicktime,video/x-msvideo,video/webm"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            />
+            {file ? (
+              <div>
+                <p className="file-drop-label">
+                  <strong>{file.name}</strong>
+                </p>
+                <p className="file-info">{formatFileSize(file.size)}</p>
+              </div>
+            ) : (
+              <div>
+                <p className="file-drop-label">
+                  <strong>Click to browse</strong> or drag & drop
+                </p>
+                <p className="file-info">MP4, MOV, AVI, WebM</p>
+              </div>
+            )}
+          </div>
 
-        <div style={{ marginBottom: "1.5rem" }}>
-          <label
-            htmlFor="reference-length"
-            style={{ display: "block", marginBottom: "0.5rem", fontWeight: 600 }}
-          >
-            Reference Length (cm){" "}
-            <span style={{ fontWeight: 400, color: "#888" }}>— optional</span>
-          </label>
-          <input
-            id="reference-length"
-            type="number"
-            min="1"
-            step="0.1"
-            placeholder="e.g. 150 (stick length)"
-            value={referenceLengthCm}
-            onChange={(e) => setReferenceLengthCm(e.target.value)}
-            style={{ padding: "0.5rem", width: "100%", boxSizing: "border-box" }}
-          />
+          {/* Reference length */}
+          <div className="mt-3">
+            <label htmlFor="reference-length">
+              Reference Length (cm) <span className="optional">- optional</span>
+            </label>
+            <input
+              id="reference-length"
+              type="number"
+              min="1"
+              step="0.1"
+              placeholder="e.g. 150 (stick length)"
+              value={referenceLengthCm}
+              onChange={(e) => setReferenceLengthCm(e.target.value)}
+            />
+          </div>
         </div>
 
         {error && (
-          <p style={{ color: "#d32f2f", marginBottom: "1rem" }}>{error}</p>
+          <p className="error-text mb-2">{error}</p>
         )}
 
         <button
           type="submit"
           disabled={!file || uploading}
-          style={{
-            padding: "0.75rem 2rem",
-            fontSize: "1rem",
-            backgroundColor: !file || uploading ? "#ccc" : "#1976d2",
-            color: "#fff",
-            border: "none",
-            borderRadius: 4,
-            cursor: !file || uploading ? "not-allowed" : "pointer",
-          }}
+          className="btn btn-primary"
+          style={{ width: "100%" }}
         >
-          {uploading ? "Uploading & Analyzing..." : "Upload & Analyze"}
+          {uploading ? "Analyzing..." : "Upload & Analyze"}
         </button>
       </form>
     </div>

@@ -36,17 +36,18 @@ function ResultPage() {
 
   if (error) {
     return (
-      <div style={{ maxWidth: 800, margin: "0 auto", padding: "2rem" }}>
-        <p style={{ color: "#d32f2f" }}>{error}</p>
-        <Link to="/upload">Try again</Link>
+      <div className="page text-center mt-4">
+        <p className="error-text mb-2">{error}</p>
+        <Link to="/upload" className="btn btn-ghost">Try again</Link>
       </div>
     );
   }
 
   if (!analysis) {
     return (
-      <div style={{ maxWidth: 800, margin: "0 auto", padding: "2rem" }}>
-        <p>Loading...</p>
+      <div className="page text-center mt-4">
+        <div className="spinner" />
+        <p className="mt-2" style={{ color: "var(--text-muted)" }}>Loading...</p>
       </div>
     );
   }
@@ -57,22 +58,19 @@ function ResultPage() {
   const hasFrameData = analysis.frameData != null && analysis.frameData.frameSpeeds.length > 0;
 
   return (
-    <div style={{ maxWidth: 800, margin: "0 auto", padding: "2rem" }}>
-      <h1>Analysis Result</h1>
-
+    <div className="page">
       {isPending && (
-        <div style={{ textAlign: "center", padding: "2rem 0" }}>
-          <p style={{ fontSize: "1.25rem", color: "#666" }}>
-            Analyzing video...
-          </p>
-          <p style={{ color: "#999" }}>
+        <div className="card text-center" style={{ padding: "3rem 2rem" }}>
+          <div className="spinner mb-3" />
+          <h2>Analyzing video...</h2>
+          <p style={{ color: "var(--text-muted)" }}>
             Status: {analysis.status}
           </p>
         </div>
       )}
 
       {analysis.status === "COMPLETED" && (
-        <div style={{ padding: "1.5rem 0" }}>
+        <>
           {hasFrameData && (
             <SpeedOverlay
               videoUrl={getVideoStreamUrl(analysis.videoId)}
@@ -81,79 +79,47 @@ function ResultPage() {
             />
           )}
 
-          <div style={{ textAlign: "center", marginTop: hasFrameData ? "1.5rem" : 0 }}>
-            <div
-              style={{
-                fontSize: "2.5rem",
-                fontWeight: 700,
-                color: "#1976d2",
-                marginBottom: "0.25rem",
-              }}
-            >
-              Peak: {analysis.speedKmh?.toFixed(1)} km/h
+          <div className="card text-center mt-3">
+            <div className="peak-speed">
+              {analysis.speedKmh?.toFixed(1)} <span style={{ fontSize: "1.5rem" }}>km/h</span>
             </div>
-            <div
-              style={{
-                fontSize: "1.25rem",
-                color: "#666",
-                marginBottom: "1.5rem",
-              }}
-            >
-              {analysis.speedMph?.toFixed(1)} mph
-            </div>
+            <p className="peak-speed-unit">{analysis.speedMph?.toFixed(1)} mph</p>
 
-            <table
-              style={{
-                margin: "0 auto",
-                textAlign: "left",
-                borderCollapse: "collapse",
-              }}
-            >
-              <tbody>
-                <tr>
-                  <td style={{ padding: "0.5rem 1rem", color: "#888" }}>Sport</td>
-                  <td style={{ padding: "0.5rem 1rem" }}>Ice Hockey</td>
-                </tr>
-                <tr>
-                  <td style={{ padding: "0.5rem 1rem", color: "#888" }}>Confidence</td>
-                  <td style={{ padding: "0.5rem 1rem" }}>
-                    {analysis.confidence != null
-                      ? (analysis.confidence * 100).toFixed(0) + "%"
-                      : "\u2014"}
-                  </td>
-                </tr>
-                <tr>
-                  <td style={{ padding: "0.5rem 1rem", color: "#888" }}>Completed</td>
-                  <td style={{ padding: "0.5rem 1rem" }}>
-                    {analysis.completedAt
-                      ? new Date(analysis.completedAt).toLocaleString()
-                      : "\u2014"}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <div className="stats-row">
+              <div className="stat-card">
+                <div className="stat-value">Ice Hockey</div>
+                <div className="stat-label">Sport</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-value">
+                  {analysis.confidence != null
+                    ? (analysis.confidence * 100).toFixed(0) + "%"
+                    : "\u2014"}
+                </div>
+                <div className="stat-label">Confidence</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-value" style={{ fontSize: "0.875rem" }}>
+                  {analysis.completedAt
+                    ? new Date(analysis.completedAt).toLocaleString()
+                    : "\u2014"}
+                </div>
+                <div className="stat-label">Completed</div>
+              </div>
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       {analysis.status === "FAILED" && (
-        <div style={{ textAlign: "center", padding: "2rem 0" }}>
-          <p style={{ color: "#d32f2f", fontSize: "1.25rem" }}>
-            Analysis failed
-          </p>
-          <p style={{ color: "#888" }}>{analysis.errorMessage}</p>
+        <div className="card text-center" style={{ padding: "3rem 2rem" }}>
+          <h2 style={{ color: "var(--error)" }}>Analysis Failed</h2>
+          <p>{analysis.errorMessage}</p>
         </div>
       )}
 
-      <div style={{ textAlign: "center", marginTop: "2rem" }}>
-        <Link
-          to="/upload"
-          style={{
-            color: "#1976d2",
-            textDecoration: "none",
-            fontSize: "1rem",
-          }}
-        >
+      <div className="text-center mt-3">
+        <Link to="/upload" className="btn btn-ghost">
           Analyze another video
         </Link>
       </div>

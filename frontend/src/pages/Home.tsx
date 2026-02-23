@@ -3,40 +3,33 @@ import { Link } from "react-router-dom";
 import api from "../api/axios";
 
 function Home() {
-  const [status, setStatus] = useState<string>("loading...");
+  const [status, setStatus] = useState<string>("...");
 
   useEffect(() => {
     api
       .get("/health")
       .then((res) => setStatus(res.data.status))
-      .catch(() => setStatus("Backend unreachable"));
+      .catch(() => setStatus("offline"));
   }, []);
 
   return (
-    <div style={{ maxWidth: 600, margin: "0 auto", padding: "2rem", textAlign: "center" }}>
-      <h1>SpeedRweb</h1>
-      <p style={{ color: "#666", marginBottom: "2rem" }}>
-        Video-based speed measurement for ice hockey
-      </p>
+    <div className="page" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1 }}>
+      <div className="text-center">
+        <h1 style={{ fontSize: "2.5rem", marginBottom: "0.75rem" }}>
+          Measure Your Speed
+        </h1>
+        <p style={{ fontSize: "1.125rem", maxWidth: 420, margin: "0 auto 2.5rem" }}>
+          Upload an ice hockey video and get instant stick swing speed analysis powered by computer vision.
+        </p>
 
-      <Link
-        to="/upload"
-        style={{
-          display: "inline-block",
-          padding: "0.75rem 2rem",
-          fontSize: "1.125rem",
-          backgroundColor: "#1976d2",
-          color: "#fff",
-          textDecoration: "none",
-          borderRadius: 4,
-        }}
-      >
-        Upload Video
-      </Link>
+        <Link to="/upload" className="btn btn-primary" style={{ fontSize: "1.0625rem", padding: "0.8rem 2.5rem" }}>
+          Upload Video
+        </Link>
 
-      <p style={{ marginTop: "2rem", fontSize: "0.875rem", color: "#999" }}>
-        Backend: {status}
-      </p>
+        <p style={{ marginTop: "3rem", fontSize: "0.8125rem", color: "var(--text-muted)" }}>
+          Backend: {status}
+        </p>
+      </div>
     </div>
   );
 }
