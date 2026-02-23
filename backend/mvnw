@@ -1,0 +1,40 @@
+#!/bin/sh
+# Maven Wrapper script
+# https://maven.apache.org/wrapper/
+
+set -e
+
+if [ -z "$MAVEN_HOME" ]; then
+  MAVEN_HOME="$HOME/.m2/wrapper/dists"
+fi
+
+WRAPPER_JAR=".mvn/wrapper/maven-wrapper.jar"
+WRAPPER_PROPERTIES=".mvn/wrapper/maven-wrapper.properties"
+
+# Determine the project base directory
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR"
+
+if [ -f "$WRAPPER_PROPERTIES" ]; then
+  DIST_URL=$(grep 'distributionUrl' "$WRAPPER_PROPERTIES" | cut -d'=' -f2- | tr -d '\r')
+  WRAPPER_URL=$(grep 'wrapperUrl' "$WRAPPER_PROPERTIES" | cut -d'=' -f2- | tr -d '\r')
+fi
+
+# If maven-wrapper.jar doesn't exist, download it
+if [ ! -f "$WRAPPER_JAR" ]; then
+  echo "Downloading Maven Wrapper..."
+  if command -v curl > /dev/null 2>&1; then
+    curl -sL -o "$WRAPPER_JAR" "$WRAPPER_URL"
+  elif command -v wget > /dev/null 2>&1; then
+    wget -q -O "$WRAPPER_JAR" "$WRAPPER_URL"
+  else
+    echo "Error: curl or wget is required to download the Maven Wrapper" >&2
+    exit 1
+  fi
+fi
+
+# Run Maven via the wrapper jar
+exec java $MAVEN_OPTS \
+  -jar "$WRAPPER_JAR" \
+  "-Dmaven.multiModuleProjectDirectory=$SCRIPT_DIR" \
+  "$@"
