@@ -1,17 +1,6 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import api from "../api/axios";
 
 function Home() {
-  const [status, setStatus] = useState<string>("...");
-
-  useEffect(() => {
-    api
-      .get("/health")
-      .then((res) => setStatus(res.data.status))
-      .catch(() => setStatus("offline"));
-  }, []);
-
   return (
     <div className="page" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1 }}>
       <div className="text-center">
@@ -30,10 +19,6 @@ function Home() {
             View History
           </Link>
         </div>
-
-        <p style={{ marginTop: "3rem", fontSize: "0.8125rem", color: "var(--text-muted)" }}>
-          Backend: {status}
-        </p>
       </div>
     </div>
   );
