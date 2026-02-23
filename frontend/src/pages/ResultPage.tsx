@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { getAnalysis, getVideoStreamUrl, type AnalysisResponse } from "../api/videoApi";
 import SpeedOverlay from "../components/SpeedOverlay";
+import { toMph, computeFrameStats } from "../utils";
 
 function ResultPage() {
   const { analysisId } = useParams<{ analysisId: string }>();
@@ -36,11 +37,7 @@ function ResultPage() {
 
   const frameStats = useMemo(() => {
     if (!analysis?.frameData) return null;
-    const { frameSpeeds, fps } = analysis.frameData;
-    const nonZero = frameSpeeds.filter((s) => s > 0);
-    const avg = nonZero.length > 0 ? nonZero.reduce((a, b) => a + b, 0) / nonZero.length : 0;
-    const duration = frameSpeeds.length / fps;
-    return { avg, duration, totalFrames: frameSpeeds.length, fps };
+    return computeFrameStats(analysis.frameData.frameSpeeds, analysis.frameData.fps);
   }, [analysis]);
 
   if (error) {
@@ -107,7 +104,7 @@ function ResultPage() {
                     <span className="result-avg-value">{frameStats.avg.toFixed(1)}</span>
                     <span className="result-avg-unit">km/h</span>
                   </div>
-                  <span className="result-avg-alt">{(frameStats.avg * 0.621371).toFixed(1)} mph</span>
+                  <span className="result-avg-alt">{toMph(frameStats.avg).toFixed(1)} mph</span>
                 </div>
               )}
             </div>

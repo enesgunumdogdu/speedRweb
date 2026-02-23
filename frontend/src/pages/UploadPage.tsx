@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { uploadVideo, createAnalysis, getAnalysis } from "../api/videoApi";
+import ProgressBar from "../components/ProgressBar";
 
 function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
@@ -153,39 +154,15 @@ function UploadPage() {
         )}
 
         {uploading && uploadPhase === "uploading" && (
-          <div className="upload-progress mb-2">
-            <div className="upload-progress-header">
-              <span className="upload-progress-label">Uploading...</span>
-              <span className="upload-progress-percent">{uploadProgress}%</span>
-            </div>
-            <div className="upload-progress-track">
-              <div
-                className="upload-progress-bar"
-                style={{ width: `${uploadProgress}%` }}
-              />
-            </div>
-          </div>
+          <ProgressBar label="Uploading..." percent={uploadProgress} />
         )}
 
         {uploading && uploadPhase === "analyzing" && (
-          <div className="upload-progress mb-2">
-            <div className="upload-progress-header">
-              <span className="upload-progress-label">{analysisLabel}</span>
-              {analysisProgress > 0 && (
-                <span className="upload-progress-percent">{analysisProgress}%</span>
-              )}
-            </div>
-            <div className="upload-progress-track">
-              {analysisProgress > 0 ? (
-                <div
-                  className="upload-progress-bar"
-                  style={{ width: `${analysisProgress}%` }}
-                />
-              ) : (
-                <div className="upload-progress-bar indeterminate" />
-              )}
-            </div>
-          </div>
+          <ProgressBar
+            label={analysisLabel}
+            percent={analysisProgress}
+            indeterminate={analysisProgress === 0}
+          />
         )}
 
         <button

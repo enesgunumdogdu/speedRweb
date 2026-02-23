@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { extractApiError } from "../utils";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -19,11 +20,7 @@ export default function LoginPage() {
       await login({ email, password });
       navigate("/upload");
     } catch (err: unknown) {
-      const msg =
-        err && typeof err === "object" && "response" in err
-          ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
-          : undefined;
-      setError(msg || "Login failed");
+      setError(extractApiError(err, "Login failed"));
     } finally {
       setLoading(false);
     }

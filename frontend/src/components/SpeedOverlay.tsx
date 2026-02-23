@@ -1,5 +1,6 @@
 import { useRef, useEffect, useCallback, useState, useMemo } from "react";
 import type { FrameData } from "../api/videoApi";
+import { toMph, computeFrameStats } from "../utils";
 
 interface SpeedOverlayProps {
   videoUrl: string;
@@ -23,10 +24,6 @@ function speedToColor(speed: number, peak: number): string {
   return `rgb(${r},${g},0)`;
 }
 
-function toMph(kmh: number): number {
-  return kmh * 0.621371;
-}
-
 export default function SpeedOverlay({ videoUrl, frameData, peakSpeedKmh }: SpeedOverlayProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -38,13 +35,10 @@ export default function SpeedOverlay({ videoUrl, frameData, peakSpeedKmh }: Spee
   const totalFrames = frameSpeeds.length;
   const peakFrameIdx = frameSpeeds.indexOf(Math.max(...frameSpeeds));
 
-  const stats = useMemo(() => {
-    const nonZero = frameSpeeds.filter((s) => s > 0);
-    const avg = nonZero.length > 0 ? nonZero.reduce((a, b) => a + b, 0) / nonZero.length : 0;
-    const duration = totalFrames / fps;
-    const peakTime = peakFrameIdx / fps;
-    return { avg, duration, peakTime };
-  }, [frameSpeeds, totalFrames, fps, peakFrameIdx]);
+  const stats = useMemo(
+    () => computeFrameStats(frameSpeeds, fps, peakFrameIdx),
+    [frameSpeeds, fps, peakFrameIdx]
+  );
 
   const getFrameIndex = useCallback(() => {
     const video = videoRef.current;

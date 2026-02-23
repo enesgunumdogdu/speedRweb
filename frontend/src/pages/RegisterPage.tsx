@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { extractApiError } from "../utils";
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -20,11 +21,7 @@ export default function RegisterPage() {
       await register({ email, password, displayName });
       navigate("/upload");
     } catch (err: unknown) {
-      const msg =
-        err && typeof err === "object" && "response" in err
-          ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
-          : undefined;
-      setError(msg || "Registration failed");
+      setError(extractApiError(err, "Registration failed"));
     } finally {
       setLoading(false);
     }
