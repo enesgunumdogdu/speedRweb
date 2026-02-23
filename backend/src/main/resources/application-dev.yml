@@ -9,6 +9,10 @@ spring:
       ddl-auto: update
     show-sql: true
 
+speedrweb:
+  storage:
+    video-dir: ./uploads/videos-dev
+
 logging:
   level:
     com.speedrweb: DEBUG

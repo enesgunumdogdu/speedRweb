@@ -17,5 +17,16 @@ spring:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
+
 server:
   port: 8080
+
+speedrweb:
+  storage:
+    video-dir: ./uploads/videos
+  analysis:
+    python-service-url: http://localhost:5001
