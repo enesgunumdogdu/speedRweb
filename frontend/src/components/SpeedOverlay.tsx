@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback, useState } from "react";
+import { useRef, useEffect, useCallback, useState, useMemo } from "react";
 import type { FrameData } from "../api/videoApi";
 
 interface SpeedOverlayProps {
@@ -13,7 +13,7 @@ function speedToColor(speed: number, peak: number): string {
   if (ratio < 0.5) {
     const t = ratio / 0.5;
     const r = Math.round(76 + (255 - 76) * t);
-    const g = Math.round(175 + (235 - 175) * t);
+    const g = Math.round(175 + (255 - 175) * t);
     const b = Math.round(80 - 80 * t);
     return `rgb(${r},${g},${b})`;
   }
@@ -21,6 +21,10 @@ function speedToColor(speed: number, peak: number): string {
   const r = 255;
   const g = Math.round(235 - 235 * t);
   return `rgb(${r},${g},0)`;
+}
+
+function toMph(kmh: number): number {
+  return kmh * 0.621371;
 }
 
 export default function SpeedOverlay({ videoUrl, frameData, peakSpeedKmh }: SpeedOverlayProps) {
@@ -33,6 +37,14 @@ export default function SpeedOverlay({ videoUrl, frameData, peakSpeedKmh }: Spee
   const { fps, frameSpeeds } = frameData;
   const totalFrames = frameSpeeds.length;
   const peakFrameIdx = frameSpeeds.indexOf(Math.max(...frameSpeeds));
+
+  const stats = useMemo(() => {
+    const nonZero = frameSpeeds.filter((s) => s > 0);
+    const avg = nonZero.length > 0 ? nonZero.reduce((a, b) => a + b, 0) / nonZero.length : 0;
+    const duration = totalFrames / fps;
+    const peakTime = peakFrameIdx / fps;
+    return { avg, duration, peakTime };
+  }, [frameSpeeds, totalFrames, fps, peakFrameIdx]);
 
   const getFrameIndex = useCallback(() => {
     const video = videoRef.current;
@@ -95,6 +107,21 @@ export default function SpeedOverlay({ videoUrl, frameData, peakSpeedKmh }: Spee
       ctx.fillText(val, padLeft - 5, y + 4);
     }
 
+    // Average line
+    const avgY = padTop + graphH - (stats.avg / maxSpeed) * graphH;
+    ctx.strokeStyle = "rgba(59, 130, 246, 0.4)";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([6, 4]);
+    ctx.beginPath();
+    ctx.moveTo(padLeft, avgY);
+    ctx.lineTo(w - padRight, avgY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = "rgba(59, 130, 246, 0.7)";
+    ctx.font = "10px system-ui, sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText(`avg ${stats.avg.toFixed(1)}`, padLeft + 4, avgY - 4);
+
     // Y-axis label
     ctx.save();
     ctx.fillStyle = "#6b7280";
@@ -133,7 +160,7 @@ export default function SpeedOverlay({ videoUrl, frameData, peakSpeedKmh }: Spee
       ctx.fillStyle = "#fff";
       ctx.font = "bold 11px system-ui, sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText(`${frameSpeeds[peakFrameIdx].toFixed(1)}`, px, py - 10);
+      ctx.fillText(`${frameSpeeds[peakFrameIdx].toFixed(1)} km/h`, px, py - 10);
     }
 
     // Playback position
@@ -160,7 +187,7 @@ export default function SpeedOverlay({ videoUrl, frameData, peakSpeedKmh }: Spee
       const x = padLeft + (i / timeSteps) * graphW;
       ctx.fillText(`${t.toFixed(1)}s`, x, h - 5);
     }
-  }, [frameSpeeds, totalFrames, peakSpeedKmh, peakFrameIdx, currentFrameIdx, fps]);
+  }, [frameSpeeds, totalFrames, peakSpeedKmh, peakFrameIdx, currentFrameIdx, fps, stats.avg]);
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -217,15 +244,48 @@ export default function SpeedOverlay({ videoUrl, frameData, peakSpeedKmh }: Spee
         </div>
       </div>
 
-      <div style={{ marginTop: 10 }}>
+      {/* Mini stats between video and graph */}
+      <div className="graph-stats-row">
+        <div className="graph-stat">
+          <span className="graph-stat-label">Peak</span>
+          <span className="graph-stat-value" style={{ color: "#ef4444" }}>
+            {peakSpeedKmh.toFixed(1)} <small>km/h</small>
+          </span>
+          <span className="graph-stat-sub">at {stats.peakTime.toFixed(1)}s</span>
+        </div>
+        <div className="graph-stat">
+          <span className="graph-stat-label">Average</span>
+          <span className="graph-stat-value" style={{ color: "var(--accent)" }}>
+            {stats.avg.toFixed(1)} <small>km/h</small>
+          </span>
+          <span className="graph-stat-sub">{toMph(stats.avg).toFixed(1)} mph</span>
+        </div>
+        <div className="graph-stat">
+          <span className="graph-stat-label">Current</span>
+          <span className="graph-stat-value" style={{ color }}>
+            {currentSpeed.toFixed(1)} <small>km/h</small>
+          </span>
+          <span className="graph-stat-sub">{toMph(currentSpeed).toFixed(1)} mph</span>
+        </div>
+        <div className="graph-stat">
+          <span className="graph-stat-label">Duration</span>
+          <span className="graph-stat-value">
+            {stats.duration.toFixed(1)}<small>s</small>
+          </span>
+          <span className="graph-stat-sub">{totalFrames} frames</span>
+        </div>
+      </div>
+
+      <div style={{ marginTop: 0 }}>
         <canvas
           ref={canvasRef}
           onClick={handleCanvasClick}
           style={{
             width: "100%",
             height: 140,
-            borderRadius: "var(--radius-lg)",
+            borderRadius: "0 0 var(--radius-lg) var(--radius-lg)",
             border: "1px solid var(--border)",
+            borderTop: "none",
             cursor: "crosshair",
             display: "block",
           }}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { getAnalysis, getVideoStreamUrl, type AnalysisResponse } from "../api/videoApi";
 import SpeedOverlay from "../components/SpeedOverlay";
@@ -33,6 +33,15 @@ function ResultPage() {
       cancelled = true;
     };
   }, [analysisId]);
+
+  const frameStats = useMemo(() => {
+    if (!analysis?.frameData) return null;
+    const { frameSpeeds, fps } = analysis.frameData;
+    const nonZero = frameSpeeds.filter((s) => s > 0);
+    const avg = nonZero.length > 0 ? nonZero.reduce((a, b) => a + b, 0) / nonZero.length : 0;
+    const duration = frameSpeeds.length / fps;
+    return { avg, duration, totalFrames: frameSpeeds.length, fps };
+  }, [analysis]);
 
   if (error) {
     return (
@@ -79,11 +88,29 @@ function ResultPage() {
             />
           )}
 
-          <div className="card text-center mt-3">
-            <div className="peak-speed">
-              {analysis.speedKmh?.toFixed(1)} <span style={{ fontSize: "1.5rem" }}>km/h</span>
+          {/* Results card */}
+          <div className="card mt-3">
+            <div className="result-header">
+              <div className="result-peak">
+                <span className="result-peak-label">Peak Speed</span>
+                <div className="result-peak-row">
+                  <span className="result-peak-value">{analysis.speedKmh?.toFixed(1)}</span>
+                  <span className="result-peak-unit">km/h</span>
+                </div>
+                <span className="result-peak-alt">{analysis.speedMph?.toFixed(1)} mph</span>
+              </div>
+
+              {frameStats && (
+                <div className="result-avg">
+                  <span className="result-avg-label">Average Speed</span>
+                  <div className="result-avg-row">
+                    <span className="result-avg-value">{frameStats.avg.toFixed(1)}</span>
+                    <span className="result-avg-unit">km/h</span>
+                  </div>
+                  <span className="result-avg-alt">{(frameStats.avg * 0.621371).toFixed(1)} mph</span>
+                </div>
+              )}
             </div>
-            <p className="peak-speed-unit">{analysis.speedMph?.toFixed(1)} mph</p>
 
             <div className="stats-row">
               <div className="stat-card">
@@ -98,15 +125,25 @@ function ResultPage() {
                 </div>
                 <div className="stat-label">Confidence</div>
               </div>
-              <div className="stat-card">
-                <div className="stat-value" style={{ fontSize: "0.875rem" }}>
-                  {analysis.completedAt
-                    ? new Date(analysis.completedAt).toLocaleString()
-                    : "\u2014"}
-                </div>
-                <div className="stat-label">Completed</div>
-              </div>
+              {frameStats && (
+                <>
+                  <div className="stat-card">
+                    <div className="stat-value">{frameStats.duration.toFixed(1)}s</div>
+                    <div className="stat-label">Duration</div>
+                  </div>
+                  <div className="stat-card">
+                    <div className="stat-value">{frameStats.totalFrames}</div>
+                    <div className="stat-label">Frames</div>
+                  </div>
+                </>
+              )}
             </div>
+
+            {analysis.completedAt && (
+              <p className="result-timestamp">
+                Analyzed on {new Date(analysis.completedAt).toLocaleString()}
+              </p>
+            )}
           </div>
         </>
       )}
