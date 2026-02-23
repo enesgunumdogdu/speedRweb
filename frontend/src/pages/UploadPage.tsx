@@ -6,6 +6,8 @@ function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [referenceLengthCm, setReferenceLengthCm] = useState<string>("");
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadPhase, setUploadPhase] = useState<"uploading" | "analyzing" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -17,9 +19,14 @@ function UploadPage() {
 
     setUploading(true);
     setError(null);
+    setUploadProgress(0);
+    setUploadPhase("uploading");
 
     try {
-      const uploadRes = await uploadVideo(file);
+      const uploadRes = await uploadVideo(file, (percent) => {
+        setUploadProgress(percent);
+      });
+      setUploadPhase("analyzing");
       const refLength = referenceLengthCm
         ? parseFloat(referenceLengthCm)
         : undefined;
@@ -31,6 +38,8 @@ function UploadPage() {
       setError(message);
     } finally {
       setUploading(false);
+      setUploadPhase(null);
+      setUploadProgress(0);
     }
   };
 
@@ -109,13 +118,43 @@ function UploadPage() {
           <p className="error-text mb-2">{error}</p>
         )}
 
+        {uploading && uploadPhase === "uploading" && (
+          <div className="upload-progress mb-2">
+            <div className="upload-progress-header">
+              <span className="upload-progress-label">Uploading...</span>
+              <span className="upload-progress-percent">{uploadProgress}%</span>
+            </div>
+            <div className="upload-progress-track">
+              <div
+                className="upload-progress-bar"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {uploading && uploadPhase === "analyzing" && (
+          <div className="upload-progress mb-2">
+            <div className="upload-progress-header">
+              <span className="upload-progress-label">Starting analysis...</span>
+            </div>
+            <div className="upload-progress-track">
+              <div className="upload-progress-bar indeterminate" />
+            </div>
+          </div>
+        )}
+
         <button
           type="submit"
           disabled={!file || uploading}
           className="btn btn-primary"
           style={{ width: "100%" }}
         >
-          {uploading ? "Analyzing..." : "Upload & Analyze"}
+          {uploading
+            ? uploadPhase === "uploading"
+              ? `Uploading... ${uploadProgress}%`
+              : "Starting analysis..."
+            : "Upload & Analyze"}
         </button>
       </form>
     </div>

@@ -4,8 +4,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.speedrweb.dto.AnalysisCallbackPayload;
 import com.speedrweb.dto.AnalysisCreateRequest;
+import com.speedrweb.dto.AnalysisListItem;
 import com.speedrweb.dto.AnalysisResponse;
 import com.speedrweb.dto.AnalysisResponse.FrameDataResponse;
+import com.speedrweb.dto.PagedResponse;
 import com.speedrweb.model.AnalysisRequest;
 import com.speedrweb.model.AnalysisStatus;
 import com.speedrweb.model.SportType;
@@ -14,9 +16,12 @@ import com.speedrweb.repository.AnalysisRequestRepository;
 import com.speedrweb.service.analyzer.SportAnalyzerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -87,6 +92,34 @@ public class AnalysisService {
         analysis = analysisRequestRepository.save(analysis);
 
         return toResponse(analysis);
+    }
+
+    public PagedResponse<AnalysisListItem> getAnalysisHistory(int page, int size) {
+        Page<AnalysisRequest> resultPage = analysisRequestRepository
+                .findAllWithVideo(PageRequest.of(page, size));
+
+        List<AnalysisListItem> items = resultPage.getContent().stream()
+                .map(a -> new AnalysisListItem(
+                        a.getId(),
+                        a.getVideo().getId(),
+                        a.getVideo().getOriginalFilename(),
+                        a.getSportType(),
+                        a.getStatus(),
+                        a.getSpeedKmh(),
+                        a.getSpeedMph(),
+                        a.getConfidence(),
+                        a.getCreatedAt(),
+                        a.getCompletedAt()
+                ))
+                .toList();
+
+        return new PagedResponse<>(
+                items,
+                resultPage.getNumber(),
+                resultPage.getSize(),
+                resultPage.getTotalElements(),
+                resultPage.getTotalPages()
+        );
     }
 
     private AnalysisResponse toResponse(AnalysisRequest a) {

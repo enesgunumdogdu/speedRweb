@@ -118,9 +118,12 @@ function ResultPage() {
         </div>
       )}
 
-      <div className="text-center mt-3">
+      <div className="text-center mt-3" style={{ display: "flex", justifyContent: "center", gap: "0.5rem" }}>
         <Link to="/upload" className="btn btn-ghost">
           Analyze another video
+        </Link>
+        <Link to="/history" className="btn btn-ghost">
+          View History
         </Link>
       </div>
     </div>

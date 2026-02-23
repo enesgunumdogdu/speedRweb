@@ -2,7 +2,9 @@ package com.speedrweb.controller;
 
 import com.speedrweb.dto.AnalysisCallbackPayload;
 import com.speedrweb.dto.AnalysisCreateRequest;
+import com.speedrweb.dto.AnalysisListItem;
 import com.speedrweb.dto.AnalysisResponse;
+import com.speedrweb.dto.PagedResponse;
 import com.speedrweb.service.AnalysisService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +20,14 @@ public class AnalysisController {
 
     public AnalysisController(AnalysisService analysisService) {
         this.analysisService = analysisService;
+    }
+
+    @GetMapping
+    public ResponseEntity<PagedResponse<AnalysisListItem>> getAnalysisHistory(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        PagedResponse<AnalysisListItem> response = analysisService.getAnalysisHistory(page, size);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping
