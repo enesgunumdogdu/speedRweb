@@ -21,6 +21,6 @@ public record AnalysisResponse(
         Instant completedAt,
         FrameDataResponse frameData
 ) {
-    public record FrameDataResponse(double fps, List<Double> frameSpeeds) {
+    public record FrameDataResponse(double fps, List<Double> frameSpeeds, Object poseLandmarks) {
     }
 }

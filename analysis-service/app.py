@@ -28,7 +28,7 @@ def run_analysis(video_path: str, reference_length_cm: float | None,
             send_progress(progress_url, percent)
 
     try:
-        speed_kmh, speed_mph, confidence, frame_speeds_kmh, fps = analyzer.analyze(
+        speed_kmh, speed_mph, confidence, frame_speeds_kmh, fps, overlay_landmarks = analyzer.analyze(
             video_path, reference_length_cm, on_progress=on_progress
         )
         payload = {
@@ -40,6 +40,7 @@ def run_analysis(video_path: str, reference_length_cm: float | None,
             "frameData": {
                 "fps": fps,
                 "frameSpeeds": frame_speeds_kmh,
+                "poseLandmarks": overlay_landmarks,
             },
         }
     except Exception as e:

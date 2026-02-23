@@ -1,6 +1,7 @@
 import { useRef, useEffect, useCallback, useState, useMemo } from "react";
 import type { FrameData } from "../api/videoApi";
 import { toMph, computeFrameStats } from "../utils";
+import SkeletonOverlay from "./SkeletonOverlay";
 
 interface SpeedOverlayProps {
   videoUrl: string;
@@ -30,6 +31,7 @@ export default function SpeedOverlay({ videoUrl, frameData, peakSpeedKmh }: Spee
   const animFrameRef = useRef<number>(0);
   const [currentSpeed, setCurrentSpeed] = useState(0);
   const [currentFrameIdx, setCurrentFrameIdx] = useState(0);
+  const [showSkeleton, setShowSkeleton] = useState(true);
 
   const { fps, frameSpeeds } = frameData;
   const totalFrames = frameSpeeds.length;
@@ -215,6 +217,35 @@ export default function SpeedOverlay({ videoUrl, frameData, peakSpeedKmh }: Spee
           controls
           style={{ width: "100%", maxHeight: "50vh", objectFit: "contain", display: "block" }}
         />
+        {showSkeleton && frameData.poseLandmarks && (
+          <SkeletonOverlay
+            videoRef={videoRef}
+            poseLandmarks={frameData.poseLandmarks}
+            fps={fps}
+          />
+        )}
+        {frameData.poseLandmarks && (
+          <button
+            onClick={() => setShowSkeleton((v) => !v)}
+            style={{
+              position: "absolute",
+              top: 10,
+              left: 10,
+              background: showSkeleton ? "rgba(0, 210, 210, 0.25)" : "rgba(0,0,0,0.5)",
+              border: showSkeleton ? "1px solid rgba(0, 210, 210, 0.6)" : "1px solid rgba(255,255,255,0.2)",
+              color: showSkeleton ? "#00d2d2" : "#9ca3af",
+              borderRadius: 6,
+              padding: "4px 10px",
+              fontSize: "0.75rem",
+              fontWeight: 600,
+              cursor: "pointer",
+              zIndex: 2,
+              backdropFilter: "blur(4px)",
+            }}
+          >
+            Skeleton {showSkeleton ? "ON" : "OFF"}
+          </button>
+        )}
         <div style={{
           position: "absolute",
           top: 10,

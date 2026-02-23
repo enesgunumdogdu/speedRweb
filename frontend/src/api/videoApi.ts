@@ -6,9 +6,19 @@ export interface VideoUploadResponse {
   fileSizeBytes: number;
 }
 
+export interface PoseLandmarkFrame {
+  lm: Record<string, [number, number]>;
+}
+
+export interface PoseLandmarks {
+  step: number;
+  frames: (PoseLandmarkFrame | null)[];
+}
+
 export interface FrameData {
   fps: number;
   frameSpeeds: number[];
+  poseLandmarks?: PoseLandmarks | null;
 }
 
 export interface AnalysisResponse {

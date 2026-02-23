@@ -10,6 +10,6 @@ public record AnalysisCallbackPayload(
         String errorMessage,
         FrameData frameData
 ) {
-    public record FrameData(double fps, List<Double> frameSpeeds) {
+    public record FrameData(double fps, List<Double> frameSpeeds, Object poseLandmarks) {
     }
 }
