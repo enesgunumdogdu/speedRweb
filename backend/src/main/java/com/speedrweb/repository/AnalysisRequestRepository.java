@@ -18,4 +18,6 @@ public interface AnalysisRequestRepository extends JpaRepository<AnalysisRequest
     @Query(value = "SELECT a FROM AnalysisRequest a JOIN FETCH a.video ORDER BY a.createdAt DESC",
            countQuery = "SELECT COUNT(a) FROM AnalysisRequest a")
     Page<AnalysisRequest> findAllWithVideo(Pageable pageable);
+
+    long countByVideoUserId(UUID userId);
 }

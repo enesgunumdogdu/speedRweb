@@ -7,6 +7,7 @@ import ResultPage from "./pages/ResultPage";
 import HistoryPage from "./pages/HistoryPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import ProfilePage from "./pages/ProfilePage";
 
 function Header() {
   const { isAuthenticated, user, logout } = useAuth();
@@ -26,7 +27,7 @@ function Header() {
         <nav className="header-nav">
           {isAuthenticated ? (
             <>
-              <span className="header-user">{user?.displayName}</span>
+              <Link to="/profile" className="header-user">{user?.displayName}</Link>
               <Link to="/history" className="btn btn-ghost" style={{ fontSize: "0.875rem" }}>
                 History
               </Link>
@@ -61,6 +62,7 @@ function App() {
         <Route path="/upload" element={<ProtectedRoute><UploadPage /></ProtectedRoute>} />
         <Route path="/result/:analysisId" element={<ProtectedRoute><ResultPage /></ProtectedRoute>} />
         <Route path="/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   );
