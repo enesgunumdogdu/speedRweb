@@ -192,7 +192,7 @@ export default function SpeedOverlay({ videoUrl, frameData, peakSpeedKmh }: Spee
           ref={videoRef}
           src={videoUrl}
           controls
-          style={{ width: "100%", display: "block" }}
+          style={{ width: "100%", maxHeight: "50vh", objectFit: "contain", display: "block" }}
         />
         <div
           style={{
