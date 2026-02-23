@@ -85,7 +85,9 @@ export async function getAnalysis(
 }
 
 export function getVideoStreamUrl(videoId: string): string {
-  return `${api.defaults.baseURL}/videos/${videoId}/stream`;
+  const token = localStorage.getItem("token");
+  const base = `${api.defaults.baseURL}/videos/${videoId}/stream`;
+  return token ? `${base}?token=${encodeURIComponent(token)}` : base;
 }
 
 export async function getAnalysisHistory(

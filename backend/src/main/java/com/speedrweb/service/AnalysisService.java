@@ -13,11 +13,13 @@ import com.speedrweb.model.AnalysisStatus;
 import com.speedrweb.model.SportType;
 import com.speedrweb.model.Video;
 import com.speedrweb.repository.AnalysisRequestRepository;
+import com.speedrweb.security.SecurityUtil;
 import com.speedrweb.service.analyzer.SportAnalyzerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -63,6 +65,12 @@ public class AnalysisService {
     public AnalysisResponse getAnalysis(UUID analysisId) {
         AnalysisRequest analysis = analysisRequestRepository.findById(analysisId)
                 .orElseThrow(() -> new IllegalArgumentException("Analysis not found: " + analysisId));
+
+        UUID currentUserId = SecurityUtil.getCurrentUserId();
+        if (!analysis.getVideo().getUser().getId().equals(currentUserId)) {
+            throw new AccessDeniedException("Access denied");
+        }
+
         return toResponse(analysis);
     }
 
@@ -111,8 +119,9 @@ public class AnalysisService {
     }
 
     public PagedResponse<AnalysisListItem> getAnalysisHistory(int page, int size) {
+        UUID currentUserId = SecurityUtil.getCurrentUserId();
         Page<AnalysisRequest> resultPage = analysisRequestRepository
-                .findAllWithVideo(PageRequest.of(page, size));
+                .findAllByUserId(currentUserId, PageRequest.of(page, size));
 
         List<AnalysisListItem> items = resultPage.getContent().stream()
                 .map(a -> new AnalysisListItem(

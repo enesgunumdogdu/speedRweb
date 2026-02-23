@@ -30,3 +30,6 @@ speedrweb:
     video-dir: ./uploads/videos
   analysis:
     python-service-url: http://localhost:5001
+  jwt:
+    secret: ${SPEEDRWEB_JWT_SECRET:changeme-in-production-use-env-var-at-least-32-chars}
+    expiration-ms: 86400000

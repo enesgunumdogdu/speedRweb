@@ -9,34 +9,24 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "videos")
+@Table(name = "users")
 @Getter
 @Setter
 @NoArgsConstructor
-public class Video {
+public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false)
-    private String originalFilename;
-
     @Column(nullable = false, unique = true)
-    private String storedFilename;
+    private String email;
 
     @Column(nullable = false)
-    private String contentType;
+    private String passwordHash;
 
     @Column(nullable = false)
-    private Long fileSizeBytes;
-
-    @Column(nullable = false)
-    private String storagePath;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    private String displayName;
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt;

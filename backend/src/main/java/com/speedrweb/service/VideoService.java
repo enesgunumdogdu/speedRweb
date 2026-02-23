@@ -1,9 +1,13 @@
 package com.speedrweb.service;
 
 import com.speedrweb.dto.VideoUploadResponse;
+import com.speedrweb.model.User;
 import com.speedrweb.model.Video;
+import com.speedrweb.repository.UserRepository;
 import com.speedrweb.repository.VideoRepository;
+import com.speedrweb.security.SecurityUtil;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -22,11 +26,14 @@ public class VideoService {
     );
 
     private final VideoRepository videoRepository;
+    private final UserRepository userRepository;
     private final Path storageDir;
 
     public VideoService(VideoRepository videoRepository,
+                        UserRepository userRepository,
                         @Value("${speedrweb.storage.video-dir}") String videoDir) {
         this.videoRepository = videoRepository;
+        this.userRepository = userRepository;
         this.storageDir = Paths.get(videoDir).toAbsolutePath().normalize();
     }
 
@@ -41,6 +48,10 @@ public class VideoService {
                     "Unsupported file type: " + contentType + ". Allowed: " + ALLOWED_CONTENT_TYPES);
         }
 
+        UUID userId = SecurityUtil.getCurrentUserId();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
         Files.createDirectories(storageDir);
 
         String storedFilename = UUID.randomUUID() + getExtension(file.getOriginalFilename());
@@ -53,6 +64,7 @@ public class VideoService {
         video.setContentType(contentType);
         video.setFileSizeBytes(file.getSize());
         video.setStoragePath(targetPath.toString());
+        video.setUser(user);
 
         video = videoRepository.save(video);
 
@@ -60,8 +72,15 @@ public class VideoService {
     }
 
     public Video getById(UUID videoId) {
-        return videoRepository.findById(videoId)
+        Video video = videoRepository.findById(videoId)
                 .orElseThrow(() -> new IllegalArgumentException("Video not found: " + videoId));
+
+        UUID currentUserId = SecurityUtil.getCurrentUserId();
+        if (!video.getUser().getId().equals(currentUserId)) {
+            throw new AccessDeniedException("Access denied");
+        }
+
+        return video;
     }
 
     private String getExtension(String filename) {

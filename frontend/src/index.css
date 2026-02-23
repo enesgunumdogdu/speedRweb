@@ -76,6 +76,19 @@ body {
   color: var(--accent);
 }
 
+.header-nav {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.header-user {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-right: 0.5rem;
+}
+
 /* ── Card ── */
 .card {
   background: var(--bg-card);
@@ -118,6 +131,8 @@ label .optional {
   color: var(--text-muted);
 }
 
+input[type="email"],
+input[type="password"],
 input[type="number"],
 input[type="text"] {
   width: 100%;
@@ -132,11 +147,15 @@ input[type="text"] {
   transition: border-color 0.2s;
 }
 
+input[type="email"]:focus,
+input[type="password"]:focus,
 input[type="number"]:focus,
 input[type="text"]:focus {
   border-color: var(--border-focus);
 }
 
+input[type="email"]::placeholder,
+input[type="password"]::placeholder,
 input[type="number"]::placeholder,
 input[type="text"]::placeholder {
   color: var(--text-muted);
