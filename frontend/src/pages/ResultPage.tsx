@@ -35,6 +35,21 @@ function ResultPage() {
     };
   }, [analysisId]);
 
+  useEffect(() => {
+    if (!analysis) return;
+    if (analysis.status === "PENDING" || analysis.status === "PROCESSING") {
+      document.title = "Analyzing... — SpeedR";
+    } else if (analysis.status === "COMPLETED" && analysis.speedKmh != null) {
+      document.title = `${analysis.speedKmh.toFixed(1)} km/h — SpeedR`;
+    } else if (analysis.status === "FAILED") {
+      document.title = "Analysis Failed — SpeedR";
+    }
+  }, [analysis]);
+
+  useEffect(() => {
+    return () => { document.title = "SpeedR"; };
+  }, []);
+
   const frameStats = useMemo(() => {
     if (!analysis?.frameData) return null;
     return computeFrameStats(analysis.frameData.frameSpeeds, analysis.frameData.fps);

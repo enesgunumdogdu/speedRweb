@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { uploadVideo, createAnalysis, getAnalysis } from "../api/videoApi";
 import ProgressBar from "../components/ProgressBar";
@@ -91,6 +91,24 @@ function UploadPage() {
     analysisProgress > 0
       ? `Analyzing... ${analysisProgress}%`
       : "Starting analysis...";
+
+  useEffect(() => {
+    if (!uploading) {
+      document.title = "Upload — SpeedR";
+      return;
+    }
+    if (uploadPhase === "uploading") {
+      document.title = `Uploading... ${uploadProgress}% — SpeedR`;
+    } else if (uploadPhase === "analyzing") {
+      document.title = analysisProgress > 0
+        ? `Analyzing... ${analysisProgress}% — SpeedR`
+        : "Analyzing... — SpeedR";
+    }
+  }, [uploading, uploadPhase, uploadProgress, analysisProgress]);
+
+  useEffect(() => {
+    return () => { document.title = "SpeedR"; };
+  }, []);
 
   return (
     <div className="page" style={{ maxWidth: 560 }}>
