@@ -50,7 +50,12 @@ class IceHockeyAnalyzer:
             reference_length_cm is not None, fps, len(frames), frame_h
         )
 
-        return speed_kmh, speed_mph, confidence
+        frame_speeds_kmh = [
+            round(mag * fps * cm_per_pixel * 0.036, 2)
+            for mag in flow_magnitudes
+        ]
+
+        return speed_kmh, speed_mph, confidence, frame_speeds_kmh, fps
 
     def _load_video(self, video_path: str):
         """Load video, convert to grayscale, resize if needed. Returns (frames, fps)."""

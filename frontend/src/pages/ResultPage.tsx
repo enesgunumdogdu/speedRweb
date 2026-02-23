@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { getAnalysis, type AnalysisResponse } from "../api/videoApi";
+import { getAnalysis, getVideoStreamUrl, type AnalysisResponse } from "../api/videoApi";
+import SpeedOverlay from "../components/SpeedOverlay";
 
 function ResultPage() {
   const { analysisId } = useParams<{ analysisId: string }>();
@@ -35,7 +36,7 @@ function ResultPage() {
 
   if (error) {
     return (
-      <div style={{ maxWidth: 600, margin: "0 auto", padding: "2rem" }}>
+      <div style={{ maxWidth: 800, margin: "0 auto", padding: "2rem" }}>
         <p style={{ color: "#d32f2f" }}>{error}</p>
         <Link to="/upload">Try again</Link>
       </div>
@@ -44,7 +45,7 @@ function ResultPage() {
 
   if (!analysis) {
     return (
-      <div style={{ maxWidth: 600, margin: "0 auto", padding: "2rem" }}>
+      <div style={{ maxWidth: 800, margin: "0 auto", padding: "2rem" }}>
         <p>Loading...</p>
       </div>
     );
@@ -53,8 +54,10 @@ function ResultPage() {
   const isPending =
     analysis.status === "PENDING" || analysis.status === "PROCESSING";
 
+  const hasFrameData = analysis.frameData != null && analysis.frameData.frameSpeeds.length > 0;
+
   return (
-    <div style={{ maxWidth: 600, margin: "0 auto", padding: "2rem" }}>
+    <div style={{ maxWidth: 800, margin: "0 auto", padding: "2rem" }}>
       <h1>Analysis Result</h1>
 
       {isPending && (
@@ -69,57 +72,67 @@ function ResultPage() {
       )}
 
       {analysis.status === "COMPLETED" && (
-        <div style={{ textAlign: "center", padding: "2rem 0" }}>
-          <div
-            style={{
-              fontSize: "3rem",
-              fontWeight: 700,
-              color: "#1976d2",
-              marginBottom: "0.5rem",
-            }}
-          >
-            {analysis.speedKmh?.toFixed(1)} km/h
-          </div>
-          <div
-            style={{
-              fontSize: "1.5rem",
-              color: "#666",
-              marginBottom: "1.5rem",
-            }}
-          >
-            {analysis.speedMph?.toFixed(1)} mph
-          </div>
+        <div style={{ padding: "1.5rem 0" }}>
+          {hasFrameData && (
+            <SpeedOverlay
+              videoUrl={getVideoStreamUrl(analysis.videoId)}
+              frameData={analysis.frameData!}
+              peakSpeedKmh={analysis.speedKmh ?? 0}
+            />
+          )}
 
-          <table
-            style={{
-              margin: "0 auto",
-              textAlign: "left",
-              borderCollapse: "collapse",
-            }}
-          >
-            <tbody>
-              <tr>
-                <td style={{ padding: "0.5rem 1rem", color: "#888" }}>Sport</td>
-                <td style={{ padding: "0.5rem 1rem" }}>Ice Hockey</td>
-              </tr>
-              <tr>
-                <td style={{ padding: "0.5rem 1rem", color: "#888" }}>Confidence</td>
-                <td style={{ padding: "0.5rem 1rem" }}>
-                  {analysis.confidence != null
-                    ? (analysis.confidence * 100).toFixed(0) + "%"
-                    : "—"}
-                </td>
-              </tr>
-              <tr>
-                <td style={{ padding: "0.5rem 1rem", color: "#888" }}>Completed</td>
-                <td style={{ padding: "0.5rem 1rem" }}>
-                  {analysis.completedAt
-                    ? new Date(analysis.completedAt).toLocaleString()
-                    : "—"}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <div style={{ textAlign: "center", marginTop: hasFrameData ? "1.5rem" : 0 }}>
+            <div
+              style={{
+                fontSize: "2.5rem",
+                fontWeight: 700,
+                color: "#1976d2",
+                marginBottom: "0.25rem",
+              }}
+            >
+              Peak: {analysis.speedKmh?.toFixed(1)} km/h
+            </div>
+            <div
+              style={{
+                fontSize: "1.25rem",
+                color: "#666",
+                marginBottom: "1.5rem",
+              }}
+            >
+              {analysis.speedMph?.toFixed(1)} mph
+            </div>
+
+            <table
+              style={{
+                margin: "0 auto",
+                textAlign: "left",
+                borderCollapse: "collapse",
+              }}
+            >
+              <tbody>
+                <tr>
+                  <td style={{ padding: "0.5rem 1rem", color: "#888" }}>Sport</td>
+                  <td style={{ padding: "0.5rem 1rem" }}>Ice Hockey</td>
+                </tr>
+                <tr>
+                  <td style={{ padding: "0.5rem 1rem", color: "#888" }}>Confidence</td>
+                  <td style={{ padding: "0.5rem 1rem" }}>
+                    {analysis.confidence != null
+                      ? (analysis.confidence * 100).toFixed(0) + "%"
+                      : "\u2014"}
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ padding: "0.5rem 1rem", color: "#888" }}>Completed</td>
+                  <td style={{ padding: "0.5rem 1rem" }}>
+                    {analysis.completedAt
+                      ? new Date(analysis.completedAt).toLocaleString()
+                      : "\u2014"}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

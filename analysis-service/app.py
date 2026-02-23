@@ -15,13 +15,19 @@ analyzer = IceHockeyAnalyzer()
 def run_analysis(video_path: str, reference_length_cm: float | None, callback_url: str):
     """Run the actual OpenCV analysis and post results to callback URL."""
     try:
-        speed_kmh, speed_mph, confidence = analyzer.analyze(video_path, reference_length_cm)
+        speed_kmh, speed_mph, confidence, frame_speeds_kmh, fps = analyzer.analyze(
+            video_path, reference_length_cm
+        )
         payload = {
             "success": True,
             "speedKmh": speed_kmh,
             "speedMph": speed_mph,
             "confidence": confidence,
             "errorMessage": None,
+            "frameData": {
+                "fps": fps,
+                "frameSpeeds": frame_speeds_kmh,
+            },
         }
     except Exception as e:
         print(f"Analysis failed: {e}")
@@ -32,6 +38,7 @@ def run_analysis(video_path: str, reference_length_cm: float | None, callback_ur
             "speedMph": None,
             "confidence": None,
             "errorMessage": str(e),
+            "frameData": None,
         }
 
     try:

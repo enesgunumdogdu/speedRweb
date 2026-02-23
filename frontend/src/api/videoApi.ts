@@ -6,6 +6,11 @@ export interface VideoUploadResponse {
   fileSizeBytes: number;
 }
 
+export interface FrameData {
+  fps: number;
+  frameSpeeds: number[];
+}
+
 export interface AnalysisResponse {
   analysisId: string;
   videoId: string;
@@ -17,6 +22,7 @@ export interface AnalysisResponse {
   errorMessage: string | null;
   createdAt: string;
   completedAt: string | null;
+  frameData: FrameData | null;
 }
 
 export async function uploadVideo(file: File): Promise<VideoUploadResponse> {
@@ -45,4 +51,8 @@ export async function getAnalysis(
 ): Promise<AnalysisResponse> {
   const res = await api.get<AnalysisResponse>(`/analysis/${analysisId}`);
   return res.data;
+}
+
+export function getVideoStreamUrl(videoId: string): string {
+  return `${api.defaults.baseURL}/videos/${videoId}/stream`;
 }

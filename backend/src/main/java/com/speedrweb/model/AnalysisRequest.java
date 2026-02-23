@@ -41,6 +41,9 @@ public class AnalysisRequest {
 
     private String errorMessage;
 
+    @Column(columnDefinition = "TEXT")
+    private String frameDataJson;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 

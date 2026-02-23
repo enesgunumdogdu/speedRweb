@@ -4,6 +4,7 @@ import com.speedrweb.model.AnalysisStatus;
 import com.speedrweb.model.SportType;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 public record AnalysisResponse(
@@ -16,6 +17,9 @@ public record AnalysisResponse(
         Double confidence,
         String errorMessage,
         Instant createdAt,
-        Instant completedAt
+        Instant completedAt,
+        FrameDataResponse frameData
 ) {
+    public record FrameDataResponse(double fps, List<Double> frameSpeeds) {
+    }
 }
