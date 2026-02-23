@@ -18,3 +18,9 @@ Thumbs.db
 
 # Uploads
 uploads/
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
