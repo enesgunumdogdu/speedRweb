@@ -6,6 +6,7 @@ import java.util.UUID;
 
 public record AnalysisCreateRequest(
         @NotNull UUID videoId,
-        Double referenceLengthCm
+        Double referenceLengthCm,
+        Double playerHeightCm
 ) {
 }

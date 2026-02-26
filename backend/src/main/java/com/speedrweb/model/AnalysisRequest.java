@@ -33,6 +33,8 @@ public class AnalysisRequest {
 
     private Double referenceLengthCm;
 
+    private Double playerHeightCm;
+
     private Double speedKmh;
 
     private Double speedMph;

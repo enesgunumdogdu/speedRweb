@@ -77,7 +77,7 @@ class IceHockeyAnalyzer:
         return self._landmarker
 
     def analyze(self, video_path: str, reference_length_cm: float | None = None,
-                on_progress: callable = None):
+                on_progress: callable = None, player_height_cm: float | None = None):
         """
         Main entry point.
         Returns (speed_kmh, speed_mph, confidence, frame_speeds_kmh, fps).
@@ -111,7 +111,7 @@ class IceHockeyAnalyzer:
         report(80)
         cm_per_pixel, cal_method = self._auto_calibrate(
             gray_frames, rgb_frames, flow_magnitudes, peak_idx,
-            reference_length_cm, pose_data
+            reference_length_cm, pose_data, player_height_cm
         )
 
         # ── Speed calculations ──
@@ -141,7 +141,8 @@ class IceHockeyAnalyzer:
             flow_magnitudes, peak_idx, cal_method,
             reference_length_cm is not None,
             fps, len(gray_frames), gray_frames[0].shape[0],
-            pose_data, wrist_speed_px is not None
+            pose_data, wrist_speed_px is not None,
+            player_height_provided=player_height_cm is not None
         )
 
         report(95)
@@ -410,7 +411,8 @@ class IceHockeyAnalyzer:
     # ═══════════════════════════════════════════════════════════════
 
     def _auto_calibrate(self, gray_frames, rgb_frames, flow_magnitudes,
-                        peak_idx, reference_length_cm, pose_data):
+                        peak_idx, reference_length_cm, pose_data,
+                        player_height_cm=None):
         """
         Multi-method automatic calibration with pose estimation.
 
@@ -428,20 +430,31 @@ class IceHockeyAnalyzer:
         stick_cm = reference_length_cm or STICK_LENGTH_CM
         estimates = []
 
+        # Use user-provided height or default
+        height_cm = player_height_cm if player_height_cm else PLAYER_HEIGHT_CM
+        # Derive proportional shoulder width and arm length from actual height
+        ratio = height_cm / 183.0
+        shoulder_cm = SHOULDER_WIDTH_CM * ratio
+        arm_cm = ARM_LENGTH_CM * ratio
+
         # ── Method 1: Pose-based body measurements (most reliable) ──
         body = self._measure_body_from_pose(pose_data)
 
         if "height_px" in body and body["height_px"] > 0:
-            cm_px = PLAYER_HEIGHT_CM / body["height_px"]
-            estimates.append(("pose_height", cm_px, 0.92))
+            cm_px = height_cm / body["height_px"]
+            # User-provided height is a real measurement, not a statistical average
+            conf = 0.97 if player_height_cm else 0.92
+            estimates.append(("pose_height", cm_px, conf))
 
         if "shoulder_width_px" in body and body["shoulder_width_px"] > 0:
-            cm_px = SHOULDER_WIDTH_CM / body["shoulder_width_px"]
-            estimates.append(("pose_shoulder", cm_px, 0.80))
+            cm_px = shoulder_cm / body["shoulder_width_px"]
+            conf = 0.85 if player_height_cm else 0.80
+            estimates.append(("pose_shoulder", cm_px, conf))
 
         if "arm_length_px" in body and body["arm_length_px"] > 0:
-            cm_px = ARM_LENGTH_CM / body["arm_length_px"]
-            estimates.append(("pose_arm", cm_px, 0.75))
+            cm_px = arm_cm / body["arm_length_px"]
+            conf = 0.80 if player_height_cm else 0.75
+            estimates.append(("pose_arm", cm_px, conf))
 
         # ── Method 2: Multi-frame stick detection via optical flow ──
         stick_flow_px = self._detect_stick_flow(gray_frames, flow_magnitudes, peak_idx)
@@ -465,7 +478,7 @@ class IceHockeyAnalyzer:
         if not any(e[0].startswith("pose_") for e in estimates):
             player_px = self._detect_player_height(gray_frames)
             if player_px:
-                cm_px = PLAYER_HEIGHT_CM / player_px
+                cm_px = height_cm / player_px
                 estimates.append(("player_silhouette", cm_px, 0.40))
 
         if not estimates:
@@ -680,7 +693,8 @@ class IceHockeyAnalyzer:
         self, flow_magnitudes, peak_idx,
         cal_method, reference_provided,
         fps, frame_count, frame_height,
-        pose_data=None, has_wrist_speed=False
+        pose_data=None, has_wrist_speed=False,
+        player_height_provided=False
     ):
         """
         Confidence score 0.0-1.0 based on:
@@ -712,6 +726,8 @@ class IceHockeyAnalyzer:
         }
         cal_score = method_scores.get(cal_method, 0.15)
         if reference_provided:
+            cal_score = min(1.0, cal_score + 0.05)
+        if player_height_provided:
             cal_score = min(1.0, cal_score + 0.05)
 
         # ── Video quality ──

@@ -54,6 +54,7 @@ public class AnalysisService {
         analysis.setSportType(SportType.ICE_HOCKEY);
         analysis.setStatus(AnalysisStatus.PENDING);
         analysis.setReferenceLengthCm(request.referenceLengthCm());
+        analysis.setPlayerHeightCm(request.playerHeightCm());
 
         analysis = analysisRequestRepository.save(analysis);
 

@@ -6,6 +6,7 @@ import ProgressBar from "../components/ProgressBar";
 function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [referenceLengthCm, setReferenceLengthCm] = useState<string>("");
+  const [playerHeightCm, setPlayerHeightCm] = useState<string>("");
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [analysisProgress, setAnalysisProgress] = useState(0);
@@ -58,7 +59,10 @@ function UploadPage() {
       const refLength = referenceLengthCm
         ? parseFloat(referenceLengthCm)
         : undefined;
-      await createAnalysis(uploadRes.videoId, refLength).then((res) =>
+      const height = playerHeightCm
+        ? parseFloat(playerHeightCm)
+        : undefined;
+      await createAnalysis(uploadRes.videoId, refLength, height).then((res) =>
         pollAnalysisProgress(res.analysisId)
       );
     } catch (err: unknown) {
@@ -163,6 +167,23 @@ function UploadPage() {
               placeholder="e.g. 150 (stick length)"
               value={referenceLengthCm}
               onChange={(e) => setReferenceLengthCm(e.target.value)}
+            />
+          </div>
+
+          {/* Player height */}
+          <div className="mt-3">
+            <label htmlFor="player-height">
+              Player Height (cm) <span className="optional">- optional</span>
+            </label>
+            <input
+              id="player-height"
+              type="number"
+              min="100"
+              max="230"
+              step="1"
+              placeholder="e.g. 180"
+              value={playerHeightCm}
+              onChange={(e) => setPlayerHeightCm(e.target.value)}
             />
           </div>
         </div>

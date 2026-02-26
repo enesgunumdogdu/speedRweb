@@ -78,11 +78,13 @@ export async function uploadVideo(
 
 export async function createAnalysis(
   videoId: string,
-  referenceLengthCm?: number
+  referenceLengthCm?: number,
+  playerHeightCm?: number
 ): Promise<AnalysisResponse> {
   const res = await api.post<AnalysisResponse>("/analysis", {
     videoId,
     referenceLengthCm: referenceLengthCm ?? null,
+    playerHeightCm: playerHeightCm ?? null,
   });
   return res.data;
 }

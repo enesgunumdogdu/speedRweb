@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
 
 @Component
@@ -48,13 +49,15 @@ public class IceHockeyAnalyzer implements SportAnalyzer {
             String callbackUrl = baseUrl + "/callback";
             String progressUrl = baseUrl + "/progress";
 
-            Map<String, Object> payload = Map.of(
-                    "analysis_id", request.getId().toString(),
-                    "video_path", request.getVideo().getStoragePath(),
-                    "reference_length_cm", request.getReferenceLengthCm() != null ? request.getReferenceLengthCm() : 0,
-                    "callback_url", callbackUrl,
-                    "progress_url", progressUrl
-            );
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("analysis_id", request.getId().toString());
+            payload.put("video_path", request.getVideo().getStoragePath());
+            payload.put("reference_length_cm", request.getReferenceLengthCm() != null ? request.getReferenceLengthCm() : 0);
+            payload.put("callback_url", callbackUrl);
+            payload.put("progress_url", progressUrl);
+            if (request.getPlayerHeightCm() != null) {
+                payload.put("player_height_cm", request.getPlayerHeightCm());
+            }
 
             restTemplate.postForEntity(
                     pythonServiceUrl + "/analyze/ice-hockey",

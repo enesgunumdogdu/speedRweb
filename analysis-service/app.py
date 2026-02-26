@@ -21,7 +21,8 @@ def send_progress(progress_url: str, percent: int):
 
 
 def run_analysis(video_path: str, reference_length_cm: float | None,
-                 callback_url: str, progress_url: str | None):
+                 callback_url: str, progress_url: str | None,
+                 player_height_cm: float | None = None):
     """Run the actual OpenCV analysis and post results to callback URL."""
     def on_progress(percent: int):
         if progress_url:
@@ -29,7 +30,8 @@ def run_analysis(video_path: str, reference_length_cm: float | None,
 
     try:
         speed_kmh, speed_mph, confidence, frame_speeds_kmh, fps, overlay_landmarks = analyzer.analyze(
-            video_path, reference_length_cm, on_progress=on_progress
+            video_path, reference_length_cm, on_progress=on_progress,
+            player_height_cm=player_height_cm
         )
         payload = {
             "success": True,
@@ -70,6 +72,7 @@ def analyze_ice_hockey():
     callback_url = data.get("callback_url")
     progress_url = data.get("progress_url")
     reference_length_cm = data.get("reference_length_cm")
+    player_height_cm = data.get("player_height_cm")
 
     if not analysis_id or not callback_url:
         return jsonify({"error": "analysis_id and callback_url are required"}), 400
@@ -81,7 +84,7 @@ def analyze_ice_hockey():
 
     thread = threading.Thread(
         target=run_analysis,
-        args=(video_path, reference_length_cm, callback_url, progress_url),
+        args=(video_path, reference_length_cm, callback_url, progress_url, player_height_cm),
     )
     thread.start()
 
